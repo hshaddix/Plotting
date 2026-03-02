@@ -1,0 +1,7 @@
+# Ignore all compiled python
+*.pyc
+*.pyo
+# Ignore local cache
+__pycache__
+# Ignore emacs files
+*~
