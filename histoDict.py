@@ -108,12 +108,19 @@ def SampleDict():
             'legend description': '#it{#gamma#gamma+b#bar{b}}',
             'extracut': '(bbyy_Jet1_truthLabel_NOSYS==5 && bbyy_Jet2_truthLabel_NOSYS==5)'
         },
+        'yy+jetsbj':
+        {
+            'histoname': 'yy+jetsbj',
+            'color': (194, 126, 224),
+            'legend description': '#it{#gamma#gamma+bj}',
+            'extracut': '((bbyy_Jet1_truthLabel_NOSYS == 5 && bbyy_Jet2_truthLabel_NOSYS != 5) || (bbyy_Jet1_truthLabel_NOSYS != 5 && bbyy_Jet2_truthLabel_NOSYS == 5))'
+        },
         'yy+jetsjj':
         {
             'histoname': 'yy+jetsjj',
             'color': (93, 175, 188),
             'legend description': '#it{#gamma#gamma+jj}',
-            'extracut': '(bbyy_Jet1_truthLabel_NOSYS!=5 || bbyy_Jet2_truthLabel_NOSYS!=5)'
+            'extracut': '(bbyy_Jet1_truthLabel_NOSYS != 5 && bbyy_Jet2_truthLabel_NOSYS != 5)'
         },
 
 # jet flavor breakdown; bbyy_Jet1/2_truthLabel_NOSYS: b=5, c=4, light/gluon=0
@@ -170,19 +177,6 @@ def SampleDict():
     'legend description': 'll',
     'extracut': '(bbyy_Jet1_truthLabel_NOSYS!=5 && bbyy_Jet1_truthLabel_NOSYS!=4 && bbyy_Jet2_truthLabel_NOSYS!=5 && bbyy_Jet2_truthLabel_NOSYS!=4)'
 },
-
-        "yjDD":
-        {
-            'histoname': 'yjDD',
-            'color': (102, 105, 111),
-            'legend description': 'Data-driven #it{#gammaj}',
-        },
-        "jjDD":
-        {
-            'histoname': 'jjDD',
-            'color': (241, 243, 219),
-            'legend description': 'Data-driven #it{jj}',
-        },
 
     }
     return dict
@@ -296,20 +290,20 @@ def SelectionDict():
         'Run2_preselection': {
             'legend upper': 'Run 2 pre-selection',
             'legend lower': '',
-            'sfs': { "yy+jetsbb": 1.7906*0.758, "yy+jetsjj": 1.7906*0.758, "yjDD": 1.7906*0.226, "jjDD": 1.7906*0.016,
+            'sfs': { "yy+jetsbb": 1.7906, "yy+jetsbj": 1.7906, "yy+jetsjj": 1.7906,
                      "jetsbb": 1.7906, "jetsbc": 1.7906, "jetscc": 1.7906, "jetsbl": 1.7906, "jetscl": 1.7906, "jetsll": 1.7906}
         },
         'Run2_preselection_HM': {
             'legend upper': 'Run 2 pre-selection',
             'legend lower': 'm_{HH}>350 GeV',
-            'sfs': { "yy+jetsbb": 1.7906*0.758, "yy+jetsjj": 1.7906*0.758, "yjDD": 1.7906*0.226, "jjDD": 1.7906*0.016,
+            'sfs': { "yy+jetsbb": 1.7906, "yy+jetsbj": 1.7906, "yy+jetsjj": 1.7906,
                      "jetsbb": 1.7906, "jetsbc": 1.7906, "jetscc": 1.7906, "jetsbl": 1.7906, "jetscl": 1.7906, "jetsll": 1.7906},
             'cuts': ['(bbyy_KF_corr_with2024_bdtSel_category_NOSYS <= 3)']
         },
         'Run2_preselection_LM': {
             'legend upper': 'Run 2 pre-selection',
             'legend lower': 'm_{HH}<350 GeV',
-            'sfs': { "yy+jetsbb": 1.7906*0.758, "yy+jetsjj": 1.7906*0.758, "yjDD": 1.7906*0.226, "jjDD": 1.7906*0.016,
+            'sfs': { "yy+jetsbb": 1.7906, "yy+jetsbj": 1.7906, "yy+jetsjj": 1.7906,
                      "jetsbb": 1.7906, "jetsbc": 1.7906, "jetscc": 1.7906, "jetsbl": 1.7906, "jetscl": 1.7906, "jetsll": 1.7906},
             'cuts': ['(bbyy_KF_corr_with2024_bdtSel_category_NOSYS >= 1000)']
         },
@@ -317,63 +311,63 @@ def SelectionDict():
             'legend upper': 'Run 2 HM 0',
             'legend lower': '',
             'cuts': ['(bbyy_KF_corr_with2024_bdtSel_category_NOSYS ==0)'],
-            'sfs': { "yy+jetsbb": 1.7906*0.787, "yy+jetsjj": 1.7906*0.787, "yjDD": 1.7906*0.192, "jjDD": 1.7906*0.021,
+            'sfs': { "yy+jetsbb": 1.7906, "yy+jetsbj": 1.7906, "yy+jetsjj": 1.7906,
                      "jetsbb": 1.7906, "jetsbc": 1.7906, "jetscc": 1.7906, "jetsbl": 1.7906, "jetscl": 1.7906, "jetsll": 1.7906}
         },
         'Run2_HM1': {
             'legend upper': 'Run 2 HM 1',
             'legend lower': '',
             'cuts': ['(bbyy_KF_corr_with2024_bdtSel_category_NOSYS ==1)'],
-            'sfs': { "yy+jetsbb": 1.7906*0.910, "yy+jetsjj": 1.7906*0.910, "yjDD": 1.7906*0.080, "jjDD": 1.7906*0.010,
+            'sfs': { "yy+jetsbb": 1.7906, "yy+jetsbj": 1.7906, "yy+jetsjj": 1.7906,
                      "jetsbb": 1.7906, "jetsbc": 1.7906, "jetscc": 1.7906, "jetsbl": 1.7906, "jetscl": 1.7906, "jetsll": 1.7906}
         },
         'Run2_HM2': {
             'legend upper': 'Run 2 HM 2',
             'legend lower': '',
             'cuts': ['(bbyy_KF_corr_with2024_bdtSel_category_NOSYS ==2)'],
-            'sfs': { "yy+jetsbb": 1.7906*0.869, "yy+jetsjj": 1.7906*0.869, "yjDD": 1.7906*0.129, "jjDD": 1.7906*0.002,
+            'sfs': { "yy+jetsbb": 1.7906, "yy+jetsbj": 1.7906, "yy+jetsjj": 1.7906,
                      "jetsbb": 1.7906, "jetsbc": 1.7906, "jetscc": 1.7906, "jetsbl": 1.7906, "jetscl": 1.7906, "jetsll": 1.7906}
         },
         'Run2_HM3': {
             'legend upper': 'Run 2 HM 3',
             'legend lower': '',
             'cuts': ['(bbyy_KF_corr_with2024_bdtSel_category_NOSYS ==3)'],
-            'sfs': { "yy+jetsbb": 1.7906*0.895, "yy+jetsjj": 1.7906*0.895, "yjDD": 1.7906*0.105, "jjDD": 1.7906*0.000,
+            'sfs': { "yy+jetsbb": 1.7906, "yy+jetsbj": 1.7906, "yy+jetsjj": 1.7906,
                      "jetsbb": 1.7906, "jetsbc": 1.7906, "jetscc": 1.7906, "jetsbl": 1.7906, "jetscl": 1.7906, "jetsll": 1.7906}
         },
         'Run2_LM0': {
             'legend upper': 'Run 2 LM 0',
             'legend lower': '',
             'cuts': ['(bbyy_KF_corr_with2024_bdtSel_category_NOSYS ==1000)'],
-            'sfs': { "yy+jetsbb": 1.7906*0.726, "yy+jetsjj": 1.7906*0.726, "yjDD": 1.7906*0.261, "jjDD": 1.7906*0.013,
+            'sfs': { "yy+jetsbb": 1.7906, "yy+jetsbj": 1.7906, "yy+jetsjj": 1.7906,
                      "jetsbb": 1.7906, "jetsbc": 1.7906, "jetscc": 1.7906, "jetsbl": 1.7906, "jetscl": 1.7906, "jetsll": 1.7906}
         },
         'Run2_LM1': {
             'legend upper': 'Run 2 LM 1',
             'legend lower': '',
             'cuts': ['(bbyy_KF_corr_with2024_bdtSel_category_NOSYS ==1001)'],
-            'sfs': { "yy+jetsbb": 1.7906*0.645, "yy+jetsjj": 1.7906*0.645, "yjDD": 1.7906*0.348, "jjDD": 1.7906*0.008,
+            'sfs': { "yy+jetsbb": 1.7906, "yy+jetsbj": 1.7906, "yy+jetsjj": 1.7906,
                      "jetsbb": 1.7906, "jetsbc": 1.7906, "jetscc": 1.7906, "jetsbl": 1.7906, "jetscl": 1.7906, "jetsll": 1.7906}
         },
         'Run2_LM2': {
             'legend upper': 'Run 2 LM 2',
             'legend lower': '',
             'cuts': ['(bbyy_KF_corr_with2024_bdtSel_category_NOSYS ==1002)'],
-            'sfs': { "yy+jetsbb": 1.7906*0.942, "yy+jetsjj": 1.7906*0.942, "yjDD": 1.7906*0.039, "jjDD": 1.7906*0.019,
+            'sfs': { "yy+jetsbb": 1.7906, "yy+jetsbj": 1.7906, "yy+jetsjj": 1.7906,
                      "jetsbb": 1.7906, "jetsbc": 1.7906, "jetscc": 1.7906, "jetsbl": 1.7906, "jetscl": 1.7906, "jetsll": 1.7906}
         },
         'Run2_LM3': {
             'legend upper': 'Run 2 LM 3',
             'legend lower': '',
             'cuts': ['(bbyy_KF_corr_with2024_bdtSel_category_NOSYS ==1003)'],
-            'sfs': { "yy+jetsbb": 1.7906*0.354, "yy+jetsjj": 1.7906*0.354, "yjDD": 1.7906*0.603, "jjDD": 1.7906*0.043,
+            'sfs': { "yy+jetsbb": 1.7906, "yy+jetsbj": 1.7906, "yy+jetsjj": 1.7906,
                      "jetsbb": 1.7906, "jetsbc": 1.7906, "jetscc": 1.7906, "jetsbl": 1.7906, "jetscl": 1.7906, "jetsll": 1.7906}
         },
         'Run2_LM4': {
             'legend upper': 'Run 2 LM 4',
             'legend lower': '',
             'cuts': ['(bbyy_KF_corr_with2024_bdtSel_category_NOSYS ==1004)'],
-            'sfs': { "yy+jetsbb": 1.7906*0.707, "yy+jetsjj": 1.7906*0.707, "yjDD": 1.7906*0.293, "jjDD": 1.7906*0.000,
+            'sfs': { "yy+jetsbb": 1.7906, "yy+jetsbj": 1.7906, "yy+jetsjj": 1.7906,
                      "jetsbb": 1.7906, "jetsbc": 1.7906, "jetscc": 1.7906, "jetsbl": 1.7906, "jetscl": 1.7906, "jetsll": 1.7906}
         },
 
@@ -381,20 +375,20 @@ def SelectionDict():
         'Run3_preselection': {
             'legend upper': 'Run 3 pre-selection',
             'legend lower': '',
-            'sfs': { "yy+jetsbb": 1.4681*0.721, "yy+jetsjj": 1.4681*0.721, "yjDD": 1.4681*0.255, "jjDD": 1.4681*0.024,
+            'sfs': { "yy+jetsbb": 1.4681, "yy+jetsbj": 1.4681, "yy+jetsjj": 1.4681,
                      "jetsbb": 1.4681, "jetsbc": 1.4681, "jetscc": 1.4681, "jetsbl": 1.4681, "jetscl": 1.4681, "jetsll": 1.4681}
         },
         'Run3_preselection_HM': {
             'legend upper': 'Run 3 pre-selection',
             'legend lower': 'm_{HH}>350 GeV',
-            'sfs': { "yy+jetsbb": 1.4681*0.721, "yy+jetsjj": 1.4681*0.721, "yjDD": 1.4681*0.255, "jjDD": 1.4681*0.024,
+            'sfs': { "yy+jetsbb": 1.4681, "yy+jetsbj": 1.4681, "yy+jetsjj": 1.4681,
                      "jetsbb": 1.4681, "jetsbc": 1.4681, "jetscc": 1.4681, "jetsbl": 1.4681, "jetscl": 1.4681, "jetsll": 1.4681},
             'cuts': ['(bbyy_KF_corr_with2024_bdtSel_category_NOSYS <= 3)']
         },
         'Run3_preselection_LM': {
             'legend upper': 'Run 3 pre-selection',
             'legend lower': 'm_{HH}<350 GeV',
-            'sfs': { "yy+jetsbb": 1.4681*0.721, "yy+jetsjj": 1.4681*0.721, "yjDD": 1.4681*0.255, "jjDD": 1.4681*0.024,
+            'sfs': { "yy+jetsbb": 1.4681, "yy+jetsbj": 1.4681, "yy+jetsjj": 1.4681,
                      "jetsbb": 1.4681, "jetsbc": 1.4681, "jetscc": 1.4681, "jetsbl": 1.4681, "jetscl": 1.4681, "jetsll": 1.4681},
             'cuts': ['(bbyy_KF_corr_with2024_bdtSel_category_NOSYS >= 1000)']
         },
@@ -402,77 +396,77 @@ def SelectionDict():
             'legend upper': 'Run 3 HM 0',
             'legend lower': '',
             'cuts': ['(bbyy_KF_corr_with2024_bdtSel_category_NOSYS ==0)'],
-            'sfs': { "yy+jetsbb": 1.4681*0.745, "yy+jetsjj": 1.4681*0.745, "yjDD": 1.4681*0.232, "jjDD": 1.4681*0.022,
+            'sfs': { "yy+jetsbb": 1.4681, "yy+jetsbj": 1.4681, "yy+jetsjj": 1.4681,
                      "jetsbb": 1.4681, "jetsbc": 1.4681, "jetscc": 1.4681, "jetsbl": 1.4681, "jetscl": 1.4681, "jetsll": 1.4681}
         },
         'Run3_HM1': {
             'legend upper': 'Run 3 HM 1',
             'legend lower': '',
             'cuts': ['(bbyy_KF_corr_with2024_bdtSel_category_NOSYS ==1)'],
-            'sfs': { "yy+jetsbb": 1.4681*0.746, "yy+jetsjj": 1.4681*0.746, "yjDD": 1.4681*0.235, "jjDD": 1.4681*0.019,
+            'sfs': { "yy+jetsbb": 1.4681, "yy+jetsbj": 1.4681, "yy+jetsjj": 1.4681,
                      "jetsbb": 1.4681, "jetsbc": 1.4681, "jetscc": 1.4681, "jetsbl": 1.4681, "jetscl": 1.4681, "jetsll": 1.4681}
         },
         'Run3_HM2': {
             'legend upper': 'Run 3 HM 2',
             'legend lower': '',
             'cuts': ['(bbyy_KF_corr_with2024_bdtSel_category_NOSYS ==2)'],
-            'sfs': { "yy+jetsbb": 1.4681*0.678, "yy+jetsjj": 1.4681*0.678, "yjDD": 1.4681*0.113, "jjDD": 1.4681*0.210,
+            'sfs': { "yy+jetsbb": 1.4681, "yy+jetsbj": 1.4681, "yy+jetsjj": 1.4681,
                      "jetsbb": 1.4681, "jetsbc": 1.4681, "jetscc": 1.4681, "jetsbl": 1.4681, "jetscl": 1.4681, "jetsll": 1.4681}
         },
         'Run3_HM3': {
             'legend upper': 'Run 3 HM 3',
             'legend lower': '',
             'cuts': ['(bbyy_KF_corr_with2024_bdtSel_category_NOSYS ==3)'],
-            'sfs': { "yy+jetsbb": 1.4681*0.852, "yy+jetsjj": 1.4681*0.852, "yjDD": 1.4681*0.145, "jjDD": 1.4681*0.003,
+            'sfs': { "yy+jetsbb": 1.4681, "yy+jetsbj": 1.4681, "yy+jetsjj": 1.4681,
                      "jetsbb": 1.4681, "jetsbc": 1.4681, "jetscc": 1.4681, "jetsbl": 1.4681, "jetscl": 1.4681, "jetsll": 1.4681}
         },
         'Run3_LM0': {
             'legend upper': 'Run 3 LM 0',
             'legend lower': '',
             'cuts': ['(bbyy_KF_corr_with2024_bdtSel_category_NOSYS ==1000)'],
-            'sfs': { "yy+jetsbb": 1.4681*0.694, "yy+jetsjj": 1.4681*0.694, "yjDD": 1.4681*0.281, "jjDD": 1.4681*0.025,
+            'sfs': { "yy+jetsbb": 1.4681, "yy+jetsbj": 1.4681, "yy+jetsjj": 1.4681,
                      "jetsbb": 1.4681, "jetsbc": 1.4681, "jetscc": 1.4681, "jetsbl": 1.4681, "jetscl": 1.4681, "jetsll": 1.4681}
         },
         'Run3_LM1': {
             'legend upper': 'Run 3 LM 1',
             'legend lower': '',
             'cuts': ['(bbyy_KF_corr_with2024_bdtSel_category_NOSYS ==1001)'],
-            'sfs': { "yy+jetsbb": 1.4681*0.649, "yy+jetsjj": 1.4681*0.649, "yjDD": 1.4681*0.317, "jjDD": 1.4681*0.034,
+            'sfs': { "yy+jetsbb": 1.4681, "yy+jetsbj": 1.4681, "yy+jetsjj": 1.4681,
                      "jetsbb": 1.4681, "jetsbc": 1.4681, "jetscc": 1.4681, "jetsbl": 1.4681, "jetscl": 1.4681, "jetsll": 1.4681}
         },
         'Run3_LM2': {
             'legend upper': 'Run 3 LM 2',
             'legend lower': '',
             'cuts': ['(bbyy_KF_corr_with2024_bdtSel_category_NOSYS ==1002)'],
-            'sfs': { "yy+jetsbb": 1.4681*0.807, "yy+jetsjj": 1.4681*0.807, "yjDD": 1.4681*0.178, "jjDD": 1.4681*0.015,
+            'sfs': { "yy+jetsbb": 1.4681, "yy+jetsbj": 1.4681, "yy+jetsjj": 1.4681,
                      "jetsbb": 1.4681, "jetsbc": 1.4681, "jetscc": 1.4681, "jetsbl": 1.4681, "jetscl": 1.4681, "jetsll": 1.4681}
         },
         'Run3_LM3': {
             'legend upper': 'Run 3 LM 3',
             'legend lower': '',
             'cuts': ['(bbyy_KF_corr_with2024_bdtSel_category_NOSYS ==1003)'],
-            'sfs': { "yy+jetsbb": 1.4681*0.936, "yy+jetsjj": 1.4681*0.936, "yjDD": 1.4681*0.062, "jjDD": 1.4681*0.002,
+            'sfs': { "yy+jetsbb": 1.4681, "yy+jetsbj": 1.4681, "yy+jetsjj": 1.4681,
                      "jetsbb": 1.4681, "jetsbc": 1.4681, "jetscc": 1.4681, "jetsbl": 1.4681, "jetscl": 1.4681, "jetsll": 1.4681}
         },
         'Run3_LM4': {
             'legend upper': 'Run 3 LM 4',
             'legend lower': '',
             'cuts': ['(bbyy_KF_corr_with2024_bdtSel_category_NOSYS ==1004)'],
-            'sfs': { "yy+jetsbb": 1.4681*0.694, "yy+jetsjj": 1.4681*0.694, "yjDD": 1.4681*0.152, "jjDD": 1.4681*0.154,
+            'sfs': { "yy+jetsbb": 1.4681, "yy+jetsbj": 1.4681, "yy+jetsjj": 1.4681,
                      "jetsbb": 1.4681, "jetsbc": 1.4681, "jetscc": 1.4681, "jetsbl": 1.4681, "jetscl": 1.4681, "jetsll": 1.4681}
         },
 
         'Run2_preselection_sidebands': {
             'legend upper': 'Run 2 pre-selection',
             'legend lower': 'sidebands',
-            'sfs': { "yy+jetsbb": 1., "yy+jetsjj": 1., "yjDD": 0., "jjDD": 0.,
+            'sfs': { "yy+jetsbb": 1., "yy+jetsbj": 1., "yy+jetsjj": 1.,
                      "jetsbb": 1., "jetsbc": 1., "jetscc": 1., "jetsbl": 1., "jetscl": 1., "jetsll": 1.},
             'cuts': ['(bbyy_myy_NOSYS < 120e3 || bbyy_myy_NOSYS > 130e3)']
         },
         'Run3_preselection_sidebands': {
             'legend upper': 'Run 3 pre-selection',
             'legend lower': 'sidebands',
-            'sfs': { "yy+jetsbb": 1., "yy+jetsjj": 1., "yjDD": 0., "jjDD": 0.,
+            'sfs': { "yy+jetsbb": 1., "yy+jetsbj": 1., "yy+jetsjj": 1.,
                      "jetsbb": 1., "jetsbc": 1., "jetscc": 1., "jetsbl": 1., "jetscl": 1., "jetsll": 1.},
             'cuts': ['(bbyy_myy_NOSYS < 120e3 || bbyy_myy_NOSYS > 130e3)']
 

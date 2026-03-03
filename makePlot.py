@@ -40,7 +40,7 @@ PCBT_WP_BINS = {
 
 
 #### PLOT 1D
-def main1D(UNBLIND=False, mcOnly=False, include_ratio=False, logOn=False, inputPath="", outputPath="./Plots/", dosignal=False, btag=None, btag_exact=False, btag_wp=85):
+def main1D(UNBLIND=False, mcOnly=False, include_ratio=False, logOn=False, inputPath="", outputPath="./Plots/", dosignal=False, btag=None, btag_exact=False, btag_wp=85, unweighted=False):
     r.gStyle.SetPadLeftMargin(0.15) 
     r.gStyle.SetPadRightMargin(0.10)
     r.gStyle.SetPadBottomMargin(0.15)
@@ -72,7 +72,7 @@ def main1D(UNBLIND=False, mcOnly=False, include_ratio=False, logOn=False, inputP
         r.gROOT.cd()
         # Create the cutlist
         cutlist = ""
-        MCcutlist = "weight_total_NOSYS"
+        MCcutlist = "1" if unweighted else "weight_total_NOSYS"
         if "cuts" in selectionDict[str(selection)]:
             cutlist = " * ".join(selectionDict[str(selection)]['cuts'])
             MCcutlist += " * "+cutlist
@@ -81,7 +81,10 @@ def main1D(UNBLIND=False, mcOnly=False, include_ratio=False, logOn=False, inputP
             pcbt_bin = PCBT_WP_BINS.get(btag_wp, PCBT_WP_BINS[85])
             npass_expr = "((bbyy_Jet1_pcbt_NOSYS >= %d) + (bbyy_Jet2_pcbt_NOSYS >= %d))" % (pcbt_bin, pcbt_bin)
             btag_cut = "(%s %s %d)" % (npass_expr, btag_op, btag)
-            MCcutlist += " * bbyy_btagSF_NOSYS * " + btag_cut  # apply btag SF + cut to MC
+            if unweighted:
+                MCcutlist += " * " + btag_cut  # raw counts, no btag SF
+            else:
+                MCcutlist += " * bbyy_btagSF_NOSYS * " + btag_cut  # apply btag SF + cut to MC
             cutlist = (cutlist + " * " + btag_cut) if cutlist else btag_cut
         print("  [btag] MC cut  : %s" % MCcutlist)
         print("  [btag] data cut: %s" % cutlist)
@@ -107,8 +110,8 @@ def main1D(UNBLIND=False, mcOnly=False, include_ratio=False, logOn=False, inputP
             theHisto = r.TH1F("h", "h", histoDict[histo_name]['nBins'], histoDict[histo_name]['x-min'], histoDict[histo_name]['x-max'])
 
             #define histo to stack
-            # Use jet flavor samples for m_yy (diphoton mass) and m_jj (dijet mass)
-            stack_list = jetsSamplesToStack if histo_name in ["bbyy_myy_NOSYS", "recojet_mjj_NOSYS", "deltaR_yy", "deltaR_jj", "bbyy_mbbyy_NOSYS"] else samplesToStack
+            # Use jet flavor samples for m_jj (dijet mass) and angular variables
+            stack_list = jetsSamplesToStack if histo_name in ["recojet_mjj_NOSYS", "deltaR_yy", "deltaR_jj", "bbyy_mbbyy_NOSYS"] else samplesToStack
             histos_to_stack = defineHistos(theHisto, sampleDict, stack_list)
 
             if dosignal:
@@ -864,6 +867,7 @@ if __name__ == "__main__":
     parser.add_argument("--btag_exact", help="Require exactly n b-tagged jets at the chosen WP (==n)", type=int, default=None)
     parser.add_argument("--btag_wp", help="b-tagging working point efficiency in %% (65, 70, 77, 85, or 90). Default is 85.", type=int, choices=[65, 70, 77, 85, 90], default=85)
     parser.add_argument("--debug_btag_wp", help="Print jet truth-label IDs for the first N events passing >=2 b-jets at --btag_wp (default 65%%) to verify the WP selection is b-rich. Exits after printing.", type=int, metavar="N", default=None)
+    parser.add_argument("--unweighted", help="Fill histograms with raw event counts (no weight_total_NOSYS or btagSF applied to MC)", action="store_true", default=False)
 
     options = parser.parse_args()
 

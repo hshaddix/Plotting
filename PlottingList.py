@@ -53,9 +53,8 @@ selectionToPlot = [
 # SAMPLES
 samplesToStack = [
     #yy+jets
-    "jjDD",
-    "yjDD",
     "yy+jetsjj",
+    "yy+jetsbj",
     "yy+jetsbb",
     #"ttyy_allhad",
     #"ttyy_nonallhad",
@@ -109,9 +108,8 @@ sample_map = {
     "ttyy_nonallhad": "ttyy_nonallhad",
     "yy+jets": "yyjets",
     "yy+jetsbb": "yyjets",
+    "yy+jetsbj": "yyjets",
     "yy+jetsjj": "yyjets",
-    "yjDD": "yyjets",
-    "jjDD": "yyjets"
     }
 
 for s in ["jetsbb","jetsbc","jetscc","jetsbl","jetscl","jetsll"]:

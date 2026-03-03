@@ -37,3 +37,23 @@ Flags are implemented to run different options:
 - [ ] -i / --inputPath
 - [ ] -o / --outputPath
 - [ ] -UB / --UNBLIND!!!
+
+Added functionality  
+- [ ] --btag N to require greater than or equal to N b jets per event
+- [ ] --btag_wp N to require a WP efficiency of N (65, 70, 77, 85, 90)
+- [ ] --shapeComparison to allow for normalization and by area to compare shapes, not rates
+- [ ] --fitRatio to overlay ratio of jet flavor to bb, and applies first order polynomial fit to most plotted variables
+- [ ] --errorfit when used with --fitRatio, adds error bars on bins and error margins on the slope parameter from the polynomial fit
+
+## Example Usage
+ 
+Run the standard stack plot, requiring at least 2 b-jets at the 77% WP:
+```
+python3 makePlot.py --btag 2 --btag_wp 77
+```
+ 
+Run shape comparison plots across jet flavors with ratio-to-bb overlays and fit lines:
+```
+python3 makePlot.py --shapeComparison --fitRatio --errorFit --btag 2 --btag_wp 77
+```
+ 
