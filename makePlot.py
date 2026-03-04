@@ -81,10 +81,8 @@ def main1D(UNBLIND=False, mcOnly=False, include_ratio=False, logOn=False, inputP
             pcbt_bin = PCBT_WP_BINS.get(btag_wp, PCBT_WP_BINS[85])
             npass_expr = "((bbyy_Jet1_pcbt_NOSYS >= %d) + (bbyy_Jet2_pcbt_NOSYS >= %d))" % (pcbt_bin, pcbt_bin)
             btag_cut = "(%s %s %d)" % (npass_expr, btag_op, btag)
-            if unweighted:
-                MCcutlist += " * " + btag_cut  # raw counts, no btag SF
-            else:
-                MCcutlist += " * bbyy_btagSF_NOSYS * " + btag_cut  # apply btag SF + cut to MC
+
+            MCcutlist += " * " + btag_cut
             cutlist = (cutlist + " * " + btag_cut) if cutlist else btag_cut
         print("  [btag] MC cut  : %s" % MCcutlist)
         print("  [btag] data cut: %s" % cutlist)
@@ -421,7 +419,7 @@ def mainShapeComparison(inputPath="", outputPath="./Plots/", dosignal=False, reb
             btag_op = "==" if btag_exact else ">="
             pcbt_bin = PCBT_WP_BINS.get(btag_wp, PCBT_WP_BINS[85])
             npass_expr = "((bbyy_Jet1_pcbt_NOSYS >= %d) + (bbyy_Jet2_pcbt_NOSYS >= %d))" % (pcbt_bin, pcbt_bin)
-            MCcutlist += " * bbyy_btagSF_NOSYS * (%s %s %d)" % (npass_expr, btag_op, btag)
+            MCcutlist += " * (%s %s %d)" % (npass_expr, btag_op, btag)
         print("  [btag] MC cut  : %s" % MCcutlist)
 
         # Plot shape comparisons for all jet-flavor histograms
