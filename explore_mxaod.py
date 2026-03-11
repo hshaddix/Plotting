@@ -97,6 +97,15 @@ WP_CUTS = {
     "WP70":  1.892,
     "WP65":  2.669,
 }
+# Integer PCBT bin thresholds: jet passes WP iff pcbt_bin >= threshold
+# bin 1 = D_b < WP90 cut, bin 2 = WP90, ..., bin 6 = WP65
+WP_BINS = {
+    "WP90": 2,
+    "WP85": 3,
+    "WP77": 4,
+    "WP70": 5,
+    "WP65": 6,
+}
 # Highlight only the two WPs the user is investigating
 HIGHLIGHT_WPS = {"WP85", "WP65"}
 
@@ -232,6 +241,15 @@ def discover_branches(tree_keys):
                     if cand in tree_keys:
                         found[key] = cand
 
+    # Per-event PCBT scores for the two leading jets (flat-ntuple only)
+    # Try _NOSYS suffix first (standard systematic-aware naming), then bare name
+    for j_idx, key in [(1, "jet1_pcbt"), (2, "jet2_pcbt")]:
+        for sfx in ("_NOSYS", ""):
+            cand = f"bbyy_Jet{j_idx}_pcbt{sfx}"
+            if cand in tree_keys:
+                found[key] = cand
+                break
+
     # Photons (sanity check)
     for bname in PHOTON_BRANCHES:
         if bname in tree_keys:
@@ -352,6 +370,48 @@ def compute_discriminant(arrays, branch_map):
     denom = np.where(denom > 0, denom, 1e-10)
     pb    = np.where(pb    > 0, pb,    1e-10)
     return np.log(pb / denom)
+
+
+def compute_discriminant_per_event(arrays):
+    """
+    Compute D_b per jet while keeping the per-event jagged structure.
+
+    Internally flattens, computes the discriminant, then re-jags using the
+    original per-event jet counts.  Returns an awkward array of shape
+    [n_events][n_jets_per_event].
+    """
+    pb   = _flatten(arrays["gn2_pb"]).astype(np.float64)
+    pc   = _flatten(arrays["gn2_pc"]).astype(np.float64) if "gn2_pc" in arrays else np.zeros_like(pb)
+    pu   = _flatten(arrays["gn2_pu"]).astype(np.float64)
+    ptau = _flatten(arrays["gn2_ptau"]).astype(np.float64) if "gn2_ptau" in arrays else np.zeros_like(pb)
+
+    denom = FC * pc + FTAU * ptau + FU * pu
+    denom = np.where(denom > 0, denom, 1e-10)
+    pb    = np.where(pb    > 0, pb,    1e-10)
+    flat_disc = np.log(pb / denom)
+
+    # Re-attach the per-event jet structure so we can count passing jets per event
+    counts = ak.to_numpy(ak.num(arrays["gn2_pb"]))
+    return ak.unflatten(flat_disc, counts)
+
+
+def disc_to_pcbt_bin(disc):
+    """
+    Convert continuous D_b discriminant values to integer PCBT bins 1–6,
+    using the same WP boundaries as makePlot (see WP_CUTS / WP_BINS).
+
+      bin 1 : D_b < WP90 cut  (-1.340)
+      bin 2 : WP90 cut <= D_b < WP85 cut   (passes WP90 only)
+      bin 3 : WP85 cut <= D_b < WP77 cut   (passes WP85)
+      bin 4 : WP77 cut <= D_b < WP70 cut   (passes WP77)
+      bin 5 : WP70 cut <= D_b < WP65 cut   (passes WP70)
+      bin 6 : D_b >= WP65 cut              (passes WP65)
+
+    Returns a numpy integer array with the same shape as disc.
+    """
+    # Sorted WP cut values form the bin edges (loosest → tightest)
+    edges = sorted(WP_CUTS.values())          # [-1.340, -0.378, 0.844, 1.892, 2.669]
+    return np.digitize(disc, edges) + 1       # digitize gives 0–5; +1 → bins 1–6
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -497,42 +557,138 @@ def plot_tightest_wp(disc, labels, tagger_name, outdir, tag):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# WP efficiency / rejection table
+# Combined WP table (jet-level + event-level side by side)
 # ─────────────────────────────────────────────────────────────────────────────
-def print_wp_table(disc, labels, outdir, tag):
+def print_combined_wp_table(disc, labels, arrays, outdir, tag, min_jets=2):
     """
-    For each WP threshold compute and print:
-      b-efficiency, c-rejection, light-rejection
-    alongside the naive expectation from inclusive dijet (for context).
-    """
-    totals = {flav: int(np.sum(labels == flav)) for flav in FLAVOUR_LABELS}
-    lines = []
-    header = (f"{'WP':<8}  {'cut':>7}  "
-              f"{'b-eff':>7}  {'c-rej':>7}  {'light-rej':>10}")
-    lines.append(header)
-    lines.append("-" * len(header))
+    Single table showing both jet-level and event-level WP statistics per row.
 
-    for wp_name, cut in sorted(WP_CUTS.items(), key=lambda x: x[1]):
-        pass_mask = disc >= cut
+    Jet-level columns (one entry per jet, all jets flattened):
+      b-eff       — fraction of b-jets passing the WP
+      c-rej       — 1 / (fraction of c-jets passing)
+      l-rej       — 1 / (fraction of light-jets passing)
+      ll-ratio    — reduction in passing light jets vs the previous WP
+
+    Event-level columns (>= min_jets jets passing, leading dijet pair):
+      all-evts    — total events passing
+      ll-evts     — events where both leading jets are light (non-b, non-c)
+      bb-evts     — events where both leading jets are b
+      ll-rej(evt) — 1 / (ll-events / total ll events in sample)
+      ll-ratio    — reduction in ll-events vs the previous WP
+
+    Both jet-level and event-level cuts use integer PCBT bins (1–6) derived
+    from disc_to_pcbt_bin(), matching the makePlot integer comparison exactly:
+        ((bbyy_Jet1_pcbt_NOSYS >= bin) + (bbyy_Jet2_pcbt_NOSYS >= bin)) >= min_jets
+
+    For the event-level, if bbyy_Jet1/2_pcbt_NOSYS branches were loaded
+    (keys "jet1_pcbt" / "jet2_pcbt" in arrays), they are used directly.
+    Otherwise the PCBT bin is derived from the continuous discriminant.
+    """
+    # ── Jet-level setup ───────────────────────────────────────────────────────
+    totals_jet  = {flav: int(np.sum(labels == flav)) for flav in FLAVOUR_LABELS}
+    pcbt_flat   = disc_to_pcbt_bin(disc)   # integer bins 1-6, one per jet
+
+    # ── Event-level setup ─────────────────────────────────────────────────────
+    have_pcbt_branches = ("jet1_pcbt" in arrays and "jet2_pcbt" in arrays)
+    if have_pcbt_branches:
+        pcbt_j1 = ak.to_numpy(arrays["jet1_pcbt"]).astype(int)
+        pcbt_j2 = ak.to_numpy(arrays["jet2_pcbt"]).astype(int)
+        n_total_evt = len(pcbt_j1)
+        evt_src = "bbyy_Jet1/2_pcbt_NOSYS (direct)"
+    else:
+        # Fall back: derive integer bins from the per-event continuous discriminant
+        disc_jagged = compute_discriminant_per_event(arrays)
+        edges = sorted(WP_CUTS.values())
+        flat_disc2 = ak.to_numpy(ak.flatten(disc_jagged, axis=None))
+        flat_bins  = np.digitize(flat_disc2, edges) + 1
+        counts     = ak.to_numpy(ak.num(disc_jagged))
+        pcbt_jagged = ak.unflatten(flat_bins, counts)
+        n_total_evt = len(disc_jagged)
+        evt_src = "PCBT bins derived from continuous D_b (no pcbt branches found)"
+
+    has_labels = "truth_label" in arrays
+    if has_labels:
+        raw_labels_jagged = arrays["truth_label"]
+        labels_jagged = ak.where(raw_labels_jagged == 5, 5,
+                        ak.where(raw_labels_jagged == 4, 4, 0))
+        padded = ak.pad_none(labels_jagged, 2, clip=True)
+        lbl1 = ak.to_numpy(ak.fill_none(padded[:, 0], -1)).astype(int)
+        lbl2 = ak.to_numpy(ak.fill_none(padded[:, 1], -1)).astype(int)
+        is_ll = ((lbl1 != 5) & (lbl1 != 4) & (lbl1 >= 0) &
+                 (lbl2 != 5) & (lbl2 != 4) & (lbl2 >= 0))
+        is_bb = (lbl1 == 5) & (lbl2 == 5)
+    else:
+        is_ll = np.ones(n_total_evt, dtype=bool)
+        is_bb = np.zeros(n_total_evt, dtype=bool)
+
+    n_ll_total = int(np.sum(is_ll))
+    n_bb_total = int(np.sum(is_bb))
+
+    # ── Build table ───────────────────────────────────────────────────────────
+    sep = "  |  "
+    jet_hdr  = f"{'b-eff':>7}  {'c-rej':>7}  {'l-rej':>8}  {'ll-ratio(jet)':>14}"
+    evt_hdr  = (f"{'all-evts':>10}  {'ll-evts':>9}  {'bb-evts':>9}  "
+                f"{'ll-rej(evt)':>11}  {'ll-ratio(evt)':>14}")
+    col_hdr  = f"{'WP':<8}  {'bin':>4}  {jet_hdr}{sep}{evt_hdr}"
+    divider  = "-" * len(col_hdr)
+
+    lines = [
+        f"WP table — jet-level (flattened) and event-level (>={min_jets} jets passing) side by side",
+        f"Integer PCBT bins used for both levels (bins 1-6, jet passes WP iff bin >= threshold)",
+        f"Event-level source: {evt_src}",
+        f"Total jets:   b={totals_jet[5]:,}  c={totals_jet[4]:,}  light={totals_jet[0]:,}",
+        f"Total events: {n_total_evt:,}   leading-ll pairs: {n_ll_total:,}   leading-bb pairs: {n_bb_total:,}",
+        divider,
+        col_hdr,
+        divider,
+    ]
+
+    prev_light_jet = None
+    prev_ll_evt    = None
+
+    for wp_name, bin_thresh in sorted(WP_BINS.items(), key=lambda x: x[1]):
+        # Jet-level (integer PCBT bin)
+        pass_mask = pcbt_flat >= bin_thresh
         eff = {}
         for flav in FLAVOUR_LABELS:
             n_pass  = int(np.sum(pass_mask & (labels == flav)))
-            n_total = totals[flav]
+            n_total = totals_jet[flav]
             eff[flav] = n_pass / n_total if n_total > 0 else float("nan")
+        rej_c        = 1.0 / eff[4] if eff[4] > 0 else float("inf")
+        rej_l        = 1.0 / eff[0] if eff[0] > 0 else float("inf")
+        n_light_pass = int(np.sum(pass_mask & (labels == 0)))
+        jet_ratio    = (f"{prev_light_jet / n_light_pass:>10.1f}x"
+                        if prev_light_jet and n_light_pass else f"{'—':>11}")
 
-        rej_c = 1.0 / eff[4] if eff[4] > 0 else float("inf")
-        rej_l = 1.0 / eff[0] if eff[0] > 0 else float("inf")
-        marker = "  <-- highlighted" if wp_name in HIGHLIGHT_WPS else ""
-        line = (f"{wp_name:<8}  {cut:>7.3f}  "
-                f"{eff[5]:>7.4f}  {rej_c:>7.1f}  {rej_l:>10.1f}{marker}")
-        lines.append(line)
+        # Event-level (integer PCBT, mirrors makePlot exactly)
+        if have_pcbt_branches:
+            evt_mask = (pcbt_j1 >= bin_thresh).astype(int) + (pcbt_j2 >= bin_thresh).astype(int) >= min_jets
+        else:
+            npass_per_evt = ak.to_numpy(ak.sum(pcbt_jagged >= bin_thresh, axis=1))
+            evt_mask      = npass_per_evt >= min_jets
+        n_all_pass = int(np.sum(evt_mask))
+        n_ll_pass  = int(np.sum(evt_mask & is_ll))
+        n_bb_pass  = int(np.sum(evt_mask & is_bb))
+        rej_ll_evt = n_ll_total / n_ll_pass if n_ll_pass > 0 else float("inf")
+        evt_ratio  = (f"{prev_ll_evt / n_ll_pass:>10.1f}x"
+                      if prev_ll_evt and n_ll_pass else f"{'—':>11}")
 
-    # Print to terminal
-    print(f"\n  WP efficiency / rejection table ({tag or 'no tag'}):")
+        marker = "  <--" if wp_name in HIGHLIGHT_WPS else ""
+
+        jet_cols = (f"{eff[5]:>7.4f}  {rej_c:>7.1f}  {rej_l:>8.1f}  {jet_ratio:>14}")
+        evt_cols = (f"{n_all_pass:>10,}  {n_ll_pass:>9,}  {n_bb_pass:>9,}  "
+                    f"{rej_ll_evt:>11.1f}  {evt_ratio:>14}{marker}")
+        lines.append(f"{wp_name:<8}  {bin_thresh:>4}  {jet_cols}{sep}{evt_cols}")
+
+        prev_light_jet = n_light_pass
+        prev_ll_evt    = n_ll_pass
+
+    lines.append(divider)
+
+    print(f"\n  Combined WP table ({tag or 'no tag'}):")
     for ln in lines:
         print(f"    {ln}")
 
-    # Also save to file
     fname = os.path.join(outdir, f"wp_table{'_' + tag if tag else ''}.txt")
     with open(fname, "w") as fh:
         fh.write("\n".join(lines) + "\n")
@@ -666,8 +822,8 @@ def main():
     plot_tightest_wp(disc, labels, tagger_name, args.outdir, args.tag)
     plot_photon_pt(arrays, args.outdir, args.tag)
 
-    # ── WP table ─────────────────────────────────────────────────────────────
-    print_wp_table(disc, labels, args.outdir, args.tag)
+    # ── Combined WP table (jet-level + event-level side by side) ─────────────
+    print_combined_wp_table(disc, labels, arrays, args.outdir, args.tag)
 
     print("\nDone.")
 

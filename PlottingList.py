@@ -21,7 +21,7 @@ histosToPlot = [
 
 # SELECTION
 selectionToPlot = [
-    "Run2_preselection",
+    #"Run2_preselection",
     #"Run2_preselection_HM",
     #"Run2_preselection_LM",
     #"Run2_HM0",
@@ -53,9 +53,10 @@ selectionToPlot = [
 # SAMPLES
 samplesToStack = [
     #yy+jets
-    "jjDD",
-    "yjDD",
-    "yy+jetsjj",
+    "yy+jetsll",
+    "yy+jetscl",
+    "yy+jetscc",
+    "yy+jetsbj",
     "yy+jetsbb",
     #"ttyy_allhad",
     #"ttyy_nonallhad",
@@ -109,9 +110,10 @@ sample_map = {
     "ttyy_nonallhad": "ttyy_nonallhad",
     "yy+jets": "yyjets",
     "yy+jetsbb": "yyjets",
-    "yy+jetsjj": "yyjets",
-    "yjDD": "yyjets",
-    "jjDD": "yyjets"
+    "yy+jetsbj": "yyjets",
+    "yy+jetscc": "yyjets",
+    "yy+jetscl": "yyjets",
+    "yy+jetsll": "yyjets",
     }
 
 for s in ["jetsbb","jetsbc","jetscc","jetsbl","jetscl","jetsll"]:

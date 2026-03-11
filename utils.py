@@ -179,7 +179,7 @@ def MergeBackgrounds(MergeBkgList, Reg, Bkg, yields):
         if (b not in MergeBkgList): NoHBkg.append(b)
 
     return (Merge, Merge_unc, NoHBkg)
-def drawATLASLabel(legend, include_ratio=False, atlastext="Internal", run3=False, btag=None, btag_exact=False, btag_wp=85):
+def drawATLASLabel(legend, include_ratio=False, atlastext="Internal", run3=False, btag=None, btag_exact=False, btag_wp=85, pt_bin_label=None):
     l = r.TLatex()
     l.SetNDC()
     l.SetTextColor(r.kBlack)
@@ -199,10 +199,15 @@ def drawATLASLabel(legend, include_ratio=False, atlastext="Internal", run3=False
         l.DrawLatex(l1, 0.67, "HH#rightarrowb#bar{b}#gamma#gamma")
         l.DrawLatex(l1, 0.60, legend['legend upper'])
         l.DrawLatex(l1, 0.55, legend['legend lower'])
+        _y = 0.50
         if btag is not None:
-            l.DrawLatex(l1, 0.50, "%s%d b-jets @ %d%% WP" % (btag_symbol, btag, btag_wp))
+            l.DrawLatex(l1, _y, "%s%d b-jets @ %d%% WP" % (btag_symbol, btag, btag_wp))
+            _y -= 0.05
         elif btag_wp != 85:
-            l.DrawLatex(l1, 0.50, "%d%% WP b-tagging" % btag_wp)
+            l.DrawLatex(l1, _y, "%d%% WP b-tagging" % btag_wp)
+            _y -= 0.05
+        if pt_bin_label is not None:
+            l.DrawLatex(l1, _y, pt_bin_label)
     else:
         l.SetTextSize(0.045)
         l1, l2 = 0.22, 1
@@ -211,10 +216,15 @@ def drawATLASLabel(legend, include_ratio=False, atlastext="Internal", run3=False
         l.DrawLatex(l1, 0.76, "HH#rightarrowb#bar{b}#gamma#gamma")
         l.DrawLatex(l1, 0.69, legend['legend upper'])
         l.DrawLatex(l1, 0.64, legend['legend lower'])
+        _y = 0.59
         if btag is not None:
-            l.DrawLatex(l1, 0.59, "%s%d b-jets @ %d%% WP" % (btag_symbol, btag, btag_wp))
+            l.DrawLatex(l1, _y, "%s%d b-jets @ %d%% WP" % (btag_symbol, btag, btag_wp))
+            _y -= 0.05
         elif btag_wp != 85:
-            l.DrawLatex(l1, 0.59, "%d%% WP b-tagging" % btag_wp)
+            l.DrawLatex(l1, _y, "%d%% WP b-tagging" % btag_wp)
+            _y -= 0.05
+        if pt_bin_label is not None:
+            l.DrawLatex(l1, _y, pt_bin_label)
 
 
 def setBlindedValuestoZero(dataHist, signficance_ratios, BLIND_THRESHOLD=0.01):

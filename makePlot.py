@@ -23,8 +23,10 @@ selectionDict = SelectionDict()
 SignalDict = SignalDict()
 
 user_name = "user.gdigrego"
-version = "v9"
-analysis_folder = "bbyy_output_ntuples_RUN_v9"
+version = "v9"  # 85WP pre-cut ntuples
+analysis_folder = "bbyy_output_ntuples_RUN_v9"  # 85WP pre-cut ntuples
+#version = "v9_WithGN3Info"  # untagged ntuples (no flavor-tagging pre-cut)
+#analysis_folder = "bbyy_output_ntuples_RUN_merged"  # untagged ntuples
 BLIND_THRESHOLD = 0.03
 
 # PCBT score: integer 1-6 per jet, tightest WP it passes
@@ -38,9 +40,24 @@ PCBT_WP_BINS = {
     90: 2,
 }
 
+# pT bins for --pT flag: (file_suffix, display_label, ROOT_cut_in_MeV)
+# Branches bbyy_Jet1_pt_NOSYS / bbyy_Jet2_pt_NOSYS are stored in MeV.
+# Three exclusive windows for both jets simultaneously:
+#   pTle40  : both jets <= 40 GeV
+#   pT40to60: both jets in (40, 60) GeV
+#   pTge60  : both jets >= 60 GeV
+PT_BINS = [
+    ("pTle40",   "p_{T}(j_{1,2}) #leq 40 GeV",
+     "(bbyy_Jet1_pt_NOSYS <= 40e3 && bbyy_Jet2_pt_NOSYS <= 40e3)"),
+    ("pT40to60", "40 < p_{T}(j_{1,2}) < 60 GeV",
+     "(bbyy_Jet1_pt_NOSYS > 40e3 && bbyy_Jet1_pt_NOSYS < 60e3 && bbyy_Jet2_pt_NOSYS > 40e3 && bbyy_Jet2_pt_NOSYS < 60e3)"),
+    ("pTge60",   "p_{T}(j_{1,2}) #geq 60 GeV",
+     "(bbyy_Jet1_pt_NOSYS >= 60e3 && bbyy_Jet2_pt_NOSYS >= 60e3)"),
+]
+
 
 #### PLOT 1D
-def main1D(UNBLIND=False, mcOnly=False, include_ratio=False, logOn=False, inputPath="", outputPath="./Plots/", dosignal=False, btag=None, btag_exact=False, btag_wp=85):
+def main1D(UNBLIND=False, mcOnly=False, include_ratio=False, logOn=False, inputPath="", outputPath="./Plots/", dosignal=False, btag=None, btag_exact=False, btag_wp=85, unweighted=False, pt_bin=None):
     r.gStyle.SetPadLeftMargin(0.15) 
     r.gStyle.SetPadRightMargin(0.10)
     r.gStyle.SetPadBottomMargin(0.15)
@@ -72,7 +89,7 @@ def main1D(UNBLIND=False, mcOnly=False, include_ratio=False, logOn=False, inputP
         r.gROOT.cd()
         # Create the cutlist
         cutlist = ""
-        MCcutlist = "weight_total_NOSYS"
+        MCcutlist = "1" if unweighted else "weight_total_NOSYS"
         if "cuts" in selectionDict[str(selection)]:
             cutlist = " * ".join(selectionDict[str(selection)]['cuts'])
             MCcutlist += " * "+cutlist
@@ -81,8 +98,13 @@ def main1D(UNBLIND=False, mcOnly=False, include_ratio=False, logOn=False, inputP
             pcbt_bin = PCBT_WP_BINS.get(btag_wp, PCBT_WP_BINS[85])
             npass_expr = "((bbyy_Jet1_pcbt_NOSYS >= %d) + (bbyy_Jet2_pcbt_NOSYS >= %d))" % (pcbt_bin, pcbt_bin)
             btag_cut = "(%s %s %d)" % (npass_expr, btag_op, btag)
-            MCcutlist += " * bbyy_btagSF_NOSYS * " + btag_cut  # apply btag SF + cut to MC
+            MCcutlist += " * " + btag_cut
             cutlist = (cutlist + " * " + btag_cut) if cutlist else btag_cut
+        if pt_bin is not None:
+            _pt_suffix, _pt_label, _pt_cut = pt_bin
+            MCcutlist += " * " + _pt_cut
+            cutlist = (cutlist + " * " + _pt_cut) if cutlist else _pt_cut
+            print("  [pT]   cut     : %s" % _pt_cut)
         print("  [btag] MC cut  : %s" % MCcutlist)
         print("  [btag] data cut: %s" % cutlist)
         # Loop over histogram required
@@ -107,8 +129,8 @@ def main1D(UNBLIND=False, mcOnly=False, include_ratio=False, logOn=False, inputP
             theHisto = r.TH1F("h", "h", histoDict[histo_name]['nBins'], histoDict[histo_name]['x-min'], histoDict[histo_name]['x-max'])
 
             #define histo to stack
-            # Use jet flavor samples for m_yy (diphoton mass) and m_jj (dijet mass)
-            stack_list = jetsSamplesToStack if histo_name in ["bbyy_myy_NOSYS", "recojet_mjj_NOSYS", "deltaR_yy", "deltaR_jj", "bbyy_mbbyy_NOSYS"] else samplesToStack
+            # Use jet flavor samples for m_jj (dijet mass) and angular variables
+            stack_list = jetsSamplesToStack if histo_name in ["recojet_mjj_NOSYS", "deltaR_yy", "deltaR_jj", "bbyy_mbbyy_NOSYS"] else samplesToStack
             histos_to_stack = defineHistos(theHisto, sampleDict, stack_list)
 
             if dosignal:
@@ -289,7 +311,8 @@ def main1D(UNBLIND=False, mcOnly=False, include_ratio=False, logOn=False, inputP
 
 
             # Set up ATLAS label
-            drawATLASLabel(selectionDict[str(selection)], include_ratio, "Internal", run3, btag=btag, btag_exact=btag_exact, btag_wp=btag_wp)
+            _pt_label_str = pt_bin[1] if pt_bin is not None else None
+            drawATLASLabel(selectionDict[str(selection)], include_ratio, "Internal", run3, btag=btag, btag_exact=btag_exact, btag_wp=btag_wp, pt_bin_label=_pt_label_str)
 
             # Draw Legend
             canv.cd()
@@ -381,8 +404,9 @@ def main1D(UNBLIND=False, mcOnly=False, include_ratio=False, logOn=False, inputP
                 btag_suffix = "_btag%d" % btag_wp
             else:
                 btag_suffix = ""
-            print("Saving the canvas name : ", outputPath + "/hist1D_" + histo_name + "_" + selection + btag_suffix + ".png")
-            canv.SaveAs(outputPath + "/hist1D_" + histo_name + "_" + selection + btag_suffix + ".png", "png")
+            pt_suffix = ("_" + pt_bin[0]) if pt_bin is not None else ""
+            print("Saving the canvas name : ", outputPath + "/hist1D_" + histo_name + "_" + selection + btag_suffix + pt_suffix + ".png")
+            canv.SaveAs(outputPath + "/hist1D_" + histo_name + "_" + selection + btag_suffix + pt_suffix + ".png", "png")
             r.SetOwnership(canv, False)
             canv.Close()
 
@@ -390,7 +414,7 @@ def main1D(UNBLIND=False, mcOnly=False, include_ratio=False, logOn=False, inputP
 #### SHAPE COMPARISON
 # Normalized jet flavor overlays; --fitRatio adds ratio-to-bb panel with pol1 fits
 # (pol1 skipped for mjj where a linear model doesn't make sense)
-def mainShapeComparison(inputPath="", outputPath="./Plots/", dosignal=False, rebin=False, fitRatio=False, errorFit=False, btag=None, btag_exact=False, btag_wp=85):
+def mainShapeComparison(inputPath="", outputPath="./Plots/", dosignal=False, rebin=False, fitRatio=False, errorFit=False, btag=None, btag_exact=False, btag_wp=85, pt_bin=None):
     r.gStyle.SetPadLeftMargin(0.15)
     r.gStyle.SetPadRightMargin(0.10)
     r.gStyle.SetPadBottomMargin(0.15)
@@ -418,7 +442,11 @@ def mainShapeComparison(inputPath="", outputPath="./Plots/", dosignal=False, reb
             btag_op = "==" if btag_exact else ">="
             pcbt_bin = PCBT_WP_BINS.get(btag_wp, PCBT_WP_BINS[85])
             npass_expr = "((bbyy_Jet1_pcbt_NOSYS >= %d) + (bbyy_Jet2_pcbt_NOSYS >= %d))" % (pcbt_bin, pcbt_bin)
-            MCcutlist += " * bbyy_btagSF_NOSYS * (%s %s %d)" % (npass_expr, btag_op, btag)
+            MCcutlist += " * (%s %s %d)" % (npass_expr, btag_op, btag)
+        if pt_bin is not None:
+            _pt_suffix, _pt_label, _pt_cut = pt_bin
+            MCcutlist += " * " + _pt_cut
+            print("  [pT]   cut     : %s" % _pt_cut)
         print("  [btag] MC cut  : %s" % MCcutlist)
 
         # Plot shape comparisons for all jet-flavor histograms
@@ -596,11 +624,16 @@ def mainShapeComparison(inputPath="", outputPath="./Plots/", dosignal=False, reb
                 l.SetTextSize(0.035)
                 l.DrawLatex(0.18, 0.80, selectionDict[str(selection)]['legend upper'])
                 l.DrawLatex(0.18, 0.75, "Shape comparison (normalized)")
+                _sc_y = 0.70
                 if btag is not None:
                     btag_symbol = "=" if btag_exact else "#geq"
-                    l.DrawLatex(0.18, 0.70, "%s%d b-jets @ %d%% WP" % (btag_symbol, btag, btag_wp))
+                    l.DrawLatex(0.18, _sc_y, "%s%d b-jets @ %d%% WP" % (btag_symbol, btag, btag_wp))
+                    _sc_y -= 0.05
                 elif btag_wp != 85:
-                    l.DrawLatex(0.18, 0.70, "%d%% WP b-tagging" % btag_wp)
+                    l.DrawLatex(0.18, _sc_y, "%d%% WP b-tagging" % btag_wp)
+                    _sc_y -= 0.05
+                if pt_bin is not None:
+                    l.DrawLatex(0.18, _sc_y, pt_bin[1])
 
                 if do_ratio:
                     canv.cd()
@@ -724,9 +757,13 @@ def mainShapeComparison(inputPath="", outputPath="./Plots/", dosignal=False, reb
                     l.SetTextSize(0.03)
                     l.DrawLatex(0.18, 0.80, selectionDict[str(selection)]['legend upper'])
                     l.DrawLatex(0.18, 0.75, "Ratio to bb (pol1 fits)" if do_fit else "Ratio to bb")
+                    _fr_y = 0.70
                     if btag is not None:
                         btag_symbol = "=" if btag_exact else "#geq"
-                        l.DrawLatex(0.18, 0.70, "%s%d b-jets @ %d%% WP" % (btag_symbol, btag, btag_wp))
+                        l.DrawLatex(0.18, _fr_y, "%s%d b-jets @ %d%% WP" % (btag_symbol, btag, btag_wp))
+                        _fr_y -= 0.05
+                    if pt_bin is not None:
+                        l.DrawLatex(0.18, _fr_y, pt_bin[1])
 
             # Save with appropriate suffix
             suffix = ""
@@ -742,6 +779,8 @@ def mainShapeComparison(inputPath="", outputPath="./Plots/", dosignal=False, reb
                 suffix += "_btag%d_%s%db" % (btag_wp, btag_prefix, btag)
             elif btag_wp != 85:
                 suffix += "_btag%d" % btag_wp
+            if pt_bin is not None:
+                suffix += "_" + pt_bin[0]
             short_name = {"bbyy_myy_NOSYS": "myy", "recojet_mjj_NOSYS": "mjj",
                           "deltaR_yy": "dR_yy", "deltaR_jj": "dR_jj",
                           "bbyy_mbbyy_NOSYS": "myyjj"}.get(histo_name, histo_name)
@@ -853,7 +892,8 @@ if __name__ == "__main__":
     parser.add_argument("-r", "--include_ratio", help="", action="store_true", default=False)
     parser.add_argument("-s", "--dosignal", help="", action="store_true", default=False)
     parser.add_argument("-l", "--logOn", help="", action="store_true", default=False)
-    parser.add_argument("-i", "--inputPath", help="Path to the input directory.",default="/eos/atlas/atlascerngroupdisk/phys-higp/higgs-pairs/Run3/yybb/")
+    parser.add_argument("-i", "--inputPath", help="Path to the input directory.", default="/eos/atlas/atlascerngroupdisk/phys-higp/higgs-pairs/Run3/yybb/")  # 85WP pre-cut ntuples
+    #parser.add_argument("-i", "--inputPath", help="Path to the input directory.",default="/eos/atlas/unpledged/group-tokyo/users/skita/diHiggsbbyy/groups/ntuple_production/gdigrego/")
     parser.add_argument("-o", "--outputPath", help="Path to the output directory.",default="./outputs/")
     parser.add_argument("-UB", "--UNBLIND", help="",action="store_true",default=False)
     parser.add_argument("--shapeComparison", help="Run shape comparison plots", action="store_true", default=False)
@@ -864,6 +904,11 @@ if __name__ == "__main__":
     parser.add_argument("--btag_exact", help="Require exactly n b-tagged jets at the chosen WP (==n)", type=int, default=None)
     parser.add_argument("--btag_wp", help="b-tagging working point efficiency in %% (65, 70, 77, 85, or 90). Default is 85.", type=int, choices=[65, 70, 77, 85, 90], default=85)
     parser.add_argument("--debug_btag_wp", help="Print jet truth-label IDs for the first N events passing >=2 b-jets at --btag_wp (default 65%%) to verify the WP selection is b-rich. Exits after printing.", type=int, metavar="N", default=None)
+    parser.add_argument("--unweighted", help="Fill histograms with raw event counts (no weight_total_NOSYS applied to MC)", action="store_true", default=False)
+    parser.add_argument("--pT", help="Produce three sets of plots gated on the pT of both leading jets: "
+                        "(1) both jets pT<=40 GeV, (2) both jets 40<pT<60 GeV, (3) both jets pT>=60 GeV. "
+                        "Uses branches bbyy_Jet1_pt_NOSYS and bbyy_Jet2_pt_NOSYS (stored in MeV).",
+                        action="store_true", default=False)
 
     options = parser.parse_args()
 
@@ -884,17 +929,28 @@ if __name__ == "__main__":
         print("The output directory did not exist, I have just created one: ", outDir)
 
     # filter out shape-only flags before passing to main1D
-    shape_only_keys = {"shapeComparison", "rebin", "fitRatio", "errorFit", "btag", "btag_exact", "btag_wp"}
+    shape_only_keys = {"shapeComparison", "rebin", "fitRatio", "errorFit", "btag", "btag_exact", "btag_wp", "pT"}
     option_dict = {k: v for k, v in vars(options).items() if (v is not None) and (k not in shape_only_keys)}
     option_dict["btag"] = btag_value
     option_dict["btag_exact"] = btag_is_exact
     option_dict["btag_wp"] = options.btag_wp
 
+    # Determine which pT bins to iterate over.
+    # --pT runs all three exclusive pT windows; without it a single pass with pt_bin=None is done.
+    pt_bins_to_run = PT_BINS if options.pT else [None]
+
     if options.debug_btag_wp is not None:
         debug_btag_wp(inputPath=options.inputPath, btag_wp=options.btag_wp, n_events=options.debug_btag_wp)
     elif options.shapeComparison:
-        mainShapeComparison(inputPath=options.inputPath, outputPath=options.outputPath, dosignal=options.dosignal,
-                           rebin=options.rebin, fitRatio=options.fitRatio, errorFit=options.errorFit,
-                           btag=btag_value, btag_exact=btag_is_exact, btag_wp=options.btag_wp)
+        for pt_bin in pt_bins_to_run:
+            if pt_bin is not None:
+                print("\n=== Shape comparison: pT bin '%s' ===" % pt_bin[0])
+            mainShapeComparison(inputPath=options.inputPath, outputPath=options.outputPath, dosignal=options.dosignal,
+                               rebin=options.rebin, fitRatio=options.fitRatio, errorFit=options.errorFit,
+                               btag=btag_value, btag_exact=btag_is_exact, btag_wp=options.btag_wp,
+                               pt_bin=pt_bin)
     else:
-        main1D(**option_dict)
+        for pt_bin in pt_bins_to_run:
+            if pt_bin is not None:
+                print("\n=== 1D plots: pT bin '%s' ===" % pt_bin[0])
+            main1D(pt_bin=pt_bin, **option_dict)
